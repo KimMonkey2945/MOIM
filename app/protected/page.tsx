@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 import { InfoIcon } from "lucide-react";
 import { FetchDataSteps } from "@/components/tutorial/fetch-data-steps";
+import { Button } from "@/components/ui/button";
 import { Suspense } from "react";
 
 async function UserDetails() {
@@ -33,6 +35,15 @@ export default function ProtectedPage() {
             <UserDetails />
           </Suspense>
         </pre>
+      </div>
+      <div className="flex flex-col gap-2 items-start">
+        <h2 className="font-bold text-2xl mb-4">Your profile</h2>
+        <p className="text-sm text-muted-foreground">
+          프로필 정보를 조회하고 수정할 수 있습니다.
+        </p>
+        <Button asChild className="mt-2">
+          <Link href="/protected/profile">프로필 관리</Link>
+        </Button>
       </div>
       <div>
         <h2 className="font-bold text-2xl mb-4">Next steps</h2>
