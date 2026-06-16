@@ -1,0 +1,5 @@
+echo "🔍 lint-staged 실행 (ESLint + Prettier)..."
+npx lint-staged
+
+echo "🔎 타입 체크 실행 (tsc --noEmit)..."
+npm run type-check

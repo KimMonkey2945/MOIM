@@ -1,0 +1,17 @@
+# 빌드 산출물
+.next/
+out/
+build/
+coverage/
+
+# 의존성
+node_modules/
+
+# 자동 생성 파일
+lib/database.types.ts
+next-env.d.ts
+package-lock.json
+
+# 기타
+*.lock
+pnpm-lock.yaml
