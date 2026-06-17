@@ -1,54 +1,34 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
-import { createClient } from "@/lib/supabase/server";
-import { InfoIcon } from "lucide-react";
-import { FetchDataSteps } from "@/components/tutorial/fetch-data-steps";
-import { Button } from "@/components/ui/button";
-import { Suspense } from "react";
+import { listEventsByUser } from "@/lib/mock/events";
+import { MOCK_CURRENT_USER_ID } from "@/lib/mock/profiles";
 
-async function UserDetails() {
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.getClaims();
+// 홈 피드 — 이벤트 카드 목록 (PRD 6.2). 현재는 mock 정적 데이터 기반 빈 껍데기.
+// 실제 디자인/카드 컴포넌트는 Phase 1 Task에서 구현한다.
+export default function ProtectedHomePage() {
+  const events = listEventsByUser(MOCK_CURRENT_USER_ID);
 
-  if (error || !data?.claims) {
-    redirect("/auth/login");
-  }
-
-  return JSON.stringify(data.claims, null, 2);
-}
-
-export default function ProtectedPage() {
   return (
-    <div className="flex w-full flex-1 flex-col gap-12">
-      <div className="w-full">
-        <div className="flex items-center gap-3 rounded-md bg-accent p-3 px-5 text-sm text-foreground">
-          <InfoIcon size="16" strokeWidth={2} />
-          This is a protected page that you can only see as an authenticated
-          user
-        </div>
-      </div>
-      <div className="flex flex-col items-start gap-2">
-        <h2 className="mb-4 text-2xl font-bold">Your user details</h2>
-        <pre className="max-h-32 overflow-auto rounded border p-3 font-mono text-xs">
-          <Suspense>
-            <UserDetails />
-          </Suspense>
-        </pre>
-      </div>
-      <div className="flex flex-col items-start gap-2">
-        <h2 className="mb-4 text-2xl font-bold">Your profile</h2>
-        <p className="text-sm text-muted-foreground">
-          프로필 정보를 조회하고 수정할 수 있습니다.
-        </p>
-        <Button asChild className="mt-2">
-          <Link href="/protected/profile">프로필 관리</Link>
-        </Button>
-      </div>
-      <div>
-        <h2 className="mb-4 text-2xl font-bold">Next steps</h2>
-        <FetchDataSteps />
-      </div>
+    <div className="flex w-full flex-1 flex-col gap-6">
+      <h1 className="text-3xl font-bold tracking-tight">홈 피드</h1>
+      <p className="text-sm text-muted-foreground">
+        내가 참여하거나 주최한 이벤트 목록입니다. (mock 데이터)
+      </p>
+      <ul className="flex flex-col gap-3">
+        {events.map((event) => (
+          <li key={event.id} className="rounded-2xl border p-5">
+            <Link
+              href={`/protected/events/${event.id}`}
+              className="text-base font-semibold hover:underline"
+            >
+              {event.title}
+            </Link>
+            <p className="text-sm text-muted-foreground">
+              {event.category} · {event.location}
+            </p>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

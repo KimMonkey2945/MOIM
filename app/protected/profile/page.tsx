@@ -3,9 +3,11 @@ import { Suspense } from "react";
 
 import { createClient } from "@/lib/supabase/server";
 import { ProfileForm } from "@/components/profile-form";
+import { getProfileById, MOCK_CURRENT_USER_ID } from "@/lib/mock/profiles";
+import type { Profile } from "@/lib/mock/types";
 
-// 동적 데이터(인증 claims + 프로필 조회)는 별도 async 컴포넌트로 분리해
-// Suspense로 감싼다 (cacheComponents 환경에서 필수 패턴)
+// 동적 데이터(인증 claims)는 별도 async 컴포넌트로 분리해 Suspense로 감싼다
+// (cacheComponents 환경 필수 패턴).
 async function ProfileDetails() {
   const supabase = await createClient();
 
@@ -15,24 +17,20 @@ async function ProfileDetails() {
     redirect("/auth/login");
   }
 
-  const userId = claimsData.claims.sub as string;
   const email = (claimsData.claims.email as string) ?? "";
 
-  // 회원가입 트리거로 생성된 본인 프로필 행 조회
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select()
-    .eq("id", userId)
-    .single();
-
-  if (!profile) {
-    // 트리거 이전에 가입한 사용자 등 프로필이 없는 경우 안내
-    return (
-      <p className="text-sm text-muted-foreground">
-        프로필 정보를 찾을 수 없습니다. 다시 로그인하거나 관리자에게 문의하세요.
-      </p>
-    );
-  }
+  // ── Phase 3 wire-up 지점 ───────────────────────────────────────────────
+  // 아래 mock 조회를 실제 profiles 테이블 조회로 교체한다:
+  //   const userId = claimsData.claims.sub as string;
+  //   const { data: profile } = await supabase
+  //     .from("profiles").select().eq("id", userId).single();
+  // ──────────────────────────────────────────────────────────────────────
+  const profile: Profile = getProfileById(MOCK_CURRENT_USER_ID) ?? {
+    id: MOCK_CURRENT_USER_ID,
+    display_name: "",
+    avatar_url: null,
+    updated_at: "",
+  };
 
   return <ProfileForm profile={profile} email={email} />;
 }
@@ -40,6 +38,7 @@ async function ProfileDetails() {
 export default function ProfilePage() {
   return (
     <div className="flex w-full flex-1 flex-col gap-6">
+      <h1 className="text-3xl font-bold tracking-tight">내 프로필</h1>
       <Suspense
         fallback={
           <p className="text-sm text-muted-foreground">불러오는 중...</p>
