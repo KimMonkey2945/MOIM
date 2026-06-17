@@ -1,5 +1,64 @@
 # 스타일링 가이드
 
+> ⚠️ 아래 「Moim 디자인 시스템 (실제 적용 기준)」 섹션이 이 프로젝트의 **권위 기준**이다.
+> 이후 「TailwindCSS v4 …」 이하 내용은 일반 참고용이며, 본 프로젝트는 실제로 **Tailwind v3 + HSL CSS 변수(`H S% L%`)** 를 사용한다. 충돌 시 이 상단 섹션과 실제 코드를 우선한다.
+
+---
+
+## 🎯 Moim 디자인 시스템 (실제 적용 기준)
+
+PRD 7장(UI/UX 디자인 가이드)을 `app/globals.css` 토큰과 클래스 컨벤션으로 확립한 것이다.
+
+### 1) 컬러 토큰 (CSS 변수, 다크모드 `class` 전략)
+
+- 모든 색상은 `app/globals.css`의 `:root` / `.dark` 에 HSL 채널값(`H S% L%`) CSS 변수로만 정의한다. 컴포넌트에서 하드코딩 색상(`bg-white`, `text-gray-900` 등)을 쓰지 않고 시맨틱 클래스(`bg-background`, `text-foreground`, `text-muted-foreground`, `bg-card`)를 쓴다.
+- **브랜드 강조색(Primary)**: 인디고 1개로 통일.
+  - 라이트: `--primary: 243 75% 59%;` / `--primary-foreground: 0 0% 100%;`
+  - 다크: `--primary: 243 75% 66%;` / `--primary-foreground: 0 0% 100%;` (대비 확보 위해 약간 밝게)
+- `--primary` 계열만 교체했고 나머지 토큰 구조(`--background`, `--card`, `--muted`, `--border`, `--radius: 0.5rem` 등)는 그대로 유지한다. 다크 전환은 `next-themes`(`ThemeSwitcher`)가 `.dark` 클래스를 토글해 처리한다.
+
+### 2) 타이포그래피 스케일 (PRD 7.2)
+
+| 용도        | 클래스 컨벤션                       |
+| ----------- | ----------------------------------- |
+| 페이지 제목 | `text-3xl font-bold tracking-tight` |
+| 섹션 제목   | `text-xl font-semibold`             |
+| 카드 제목   | `text-base font-semibold`           |
+| 보조 텍스트 | `text-sm text-muted-foreground`     |
+
+### 3) 카드 & 여백 원칙 (PRD 7.1)
+
+- **카드**: `rounded-2xl` + 내부 패딩 `p-5` + `border`(시맨틱 `border-border` 자동 적용).
+- **섹션 간격**: 세로 스택은 `gap-6` 이상(보조 요소 묶음은 `gap-2~3` 허용).
+- 전역 강제는 최소화한다. 위 값은 **유틸 클래스 컨벤션**으로 두고 각 컴포넌트에서 `cn()`으로 조합한다.
+
+```tsx
+// 표준 카드 예시
+<article className="rounded-2xl border p-5">
+  <h3 className="text-base font-semibold">카드 제목</h3>
+  <p className="text-sm text-muted-foreground">보조 설명</p>
+</article>
+```
+
+### 4) 로딩 — Skeleton
+
+- 로딩 자리표시자는 shadcn `Skeleton`(`@/components/ui/skeleton`)을 사용한다. 신규 프리미티브는 직접 만들지 말고 `npx shadcn@latest add [name]`로 추가한다.
+
+```tsx
+import { Skeleton } from "@/components/ui/skeleton";
+
+<div className="rounded-2xl border p-5">
+  <Skeleton className="h-5 w-2/3" />
+  <Skeleton className="mt-2 h-4 w-1/2" />
+</div>;
+```
+
+### 5) 반응형 기준점
+
+- 모바일 퍼스트: 기본(375px) → `md:`(768px) → `lg:`/데스크톱(1280px) 순으로 확장한다. 데스크톱 우선(`hidden lg:block`)을 지양한다.
+
+---
+
 이 문서는 TailwindCSS v4 + shadcn/ui를 활용한 스타일링 규칙과 모범 사례를 제공합니다.
 
 ## 🎨 기술 스택 개요
