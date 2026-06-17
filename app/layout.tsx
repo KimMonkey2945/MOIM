@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Poppins, Roboto_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
@@ -13,10 +14,26 @@ export const metadata: Metadata = {
   description: "The fastest way to build apps with Next.js and Supabase",
 };
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// candyland 테마 폰트. Poppins는 라틴 전용이라 한글은 tailwind sans fallback으로 렌더된다.
+const poppins = Poppins({
+  variable: "--font-sans",
   display: "swap",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const robotoMono = Roboto_Mono({
+  variable: "--font-mono",
+  display: "swap",
+  subsets: ["latin"],
+});
+
+// Pretendard(한글) self-host. 가변 폰트라 weight 범위를 명시한다.
+const pretendard = localFont({
+  src: "./fonts/PretendardVariable.woff2",
+  variable: "--font-pretendard",
+  display: "swap",
+  weight: "45 920",
 });
 
 export default function RootLayout({
@@ -26,7 +43,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.className} antialiased`}>
+      <body
+        className={`${poppins.variable} ${pretendard.variable} ${robotoMono.variable} font-sans antialiased`}
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

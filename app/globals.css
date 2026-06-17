@@ -2,61 +2,65 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * tweakcn "candyland" 팔레트 — Tailwind v3 형식(HSL 채널값).
+ * tailwind.config.ts가 hsl(var(--x))로 감싸므로 변수에는 "h s% l%" 채널만 둔다.
+ * (oklch 원시값을 쓰면 hsl()로 감쌀 수 없고 /50 같은 투명도 유틸도 깨진다.)
+ */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
+    --background: 200 23% 97%;
+    --foreground: 0 0% 20%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
+    --card-foreground: 0 0% 20%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    /* Moim 브랜드 강조색 (인디고) — PRD 7.3 Primary 1개 */
-    --primary: 243 75% 59%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --popover-foreground: 0 0% 20%;
+    --primary: 350 100% 88%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 197 71% 73%;
+    --secondary-foreground: 0 0% 0%;
+    --muted: 50 27% 82%;
+    --muted-foreground: 0 0% 43%;
+    --accent: 60 100% 50%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 83%;
+    --input: 0 0% 83%;
+    --ring: 350 100% 88%;
+    --chart-1: 350 100% 88%;
+    --chart-2: 197 71% 73%;
+    --chart-3: 60 100% 50%;
+    --chart-4: 330 100% 80%;
+    --chart-5: 120 60% 50%;
     --radius: 0.5rem;
   }
   .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    /* 다크모드: 동일 브랜드 색조를 약간 밝게 조정해 대비 확보 */
-    --primary: 243 75% 66%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --background: 220 15% 12%;
+    --foreground: 0 0% 90%;
+    --card: 197 7% 20%;
+    --card-foreground: 0 0% 90%;
+    --popover: 197 7% 20%;
+    --popover-foreground: 0 0% 90%;
+    --primary: 330 100% 80%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 120 60% 50%;
+    --secondary-foreground: 0 0% 0%;
+    --muted: 0 0% 27%;
+    --muted-foreground: 0 0% 64%;
+    --accent: 197 71% 73%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 27%;
+    --input: 0 0% 27%;
+    --ring: 330 100% 80%;
+    --chart-1: 330 100% 80%;
+    --chart-2: 120 60% 50%;
+    --chart-3: 197 71% 73%;
+    --chart-4: 60 100% 50%;
+    --chart-5: 48 100% 50%;
+    --radius: 0.5rem;
   }
 }
 

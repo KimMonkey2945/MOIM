@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import defaultTheme from "tailwindcss/defaultTheme";
 import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
@@ -11,6 +12,15 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        // 라틴은 Poppins(--font-sans), Poppins에 없는 한글은 self-host Pretendard, 그 외는 시스템 sans.
+        sans: [
+          "var(--font-sans)",
+          "var(--font-pretendard)",
+          ...defaultTheme.fontFamily.sans,
+        ],
+        mono: ["var(--font-mono)", ...defaultTheme.fontFamily.mono],
+      },
       colors: {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
