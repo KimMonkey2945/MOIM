@@ -3,17 +3,45 @@ import type { EventCategory, RsvpStatus } from "@/lib/mock/types";
 // 이벤트/RSVP 화면 표시에 공통으로 쓰는 포맷·색상 매핑.
 // Phase 3 wire-up 후에도 표시 규칙은 그대로 재사용한다(데이터 소스만 교체).
 
-/** event_at(UTC ISO) → 한국어 날짜·시간 문자열 (예: "6월 20일 (토) 오전 10:00") */
+/** 요일 인덱스(0=일) → 한글 약칭. Intl 로케일 데이터에 의존하지 않기 위해 직접 매핑. */
+const WEEKDAY_KO = ["일", "월", "화", "수", "목", "금", "토"] as const;
+
+/**
+ * event_at(UTC ISO) → 한국어 날짜·시간 문자열 (예: "6월 20일 (토) 오전 10:00")
+ *
+ * 오전/오후·요일 같은 로케일 텍스트는 서버(Node ICU)와 브라우저(V8 ICU)에서
+ * "오전" vs "AM"으로 갈려 hydration mismatch를 일으킨다. 따라서 숫자 parts만
+ * Intl(en-CA, h23)로 KST 변환해 뽑고, 한글 라벨은 코드에서 결정적으로 조립한다.
+ */
 export function formatEventDate(iso: string): string {
-  const date = new Date(iso);
-  return new Intl.DateTimeFormat("ko-KR", {
+  const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Seoul",
-    month: "long",
+    month: "numeric",
     day: "numeric",
     weekday: "short",
-    hour: "numeric",
+    hour: "2-digit",
     minute: "2-digit",
-  }).format(date);
+    hourCycle: "h23",
+  }).formatToParts(new Date(iso));
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+
+  // en-CA weekday("Sat") → 인덱스 → 한글. 환경 무관하게 영어 약칭은 동일하다.
+  const EN_WEEKDAY: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  };
+  const weekday = WEEKDAY_KO[EN_WEEKDAY[get("weekday")] ?? 0];
+
+  const hour24 = Number(get("hour"));
+  const period = hour24 < 12 ? "오전" : "오후";
+  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+
+  return `${Number(get("month"))}월 ${Number(get("day"))}일 (${weekday}) ${period} ${hour12}:${get("minute")}`;
 }
 
 /** event_at(UTC ISO) → `<input type="date">` 값(YYYY-MM-DD, KST 기준) */
