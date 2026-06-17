@@ -2,8 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import type { Participant, RsvpStatus } from "@/lib/mock/types";
-import { getProfileById } from "@/lib/mock/profiles";
+import type { ParticipantWithProfile, RsvpStatus } from "@/lib/types";
 import { rsvpLabels } from "@/lib/event-display";
 import { cn } from "@/lib/utils";
 
@@ -26,7 +25,7 @@ const statusBadgeClass: Record<RsvpStatus, string> = {
 export function ParticipantList({
   participants,
 }: {
-  participants: Participant[];
+  participants: ParticipantWithProfile[];
 }) {
   const [filter, setFilter] = useState<FilterKey>("all");
 
@@ -78,8 +77,7 @@ export function ParticipantList({
       ) : (
         <ul className="flex flex-col gap-2">
           {filtered.map((p) => {
-            const profile = getProfileById(p.user_id);
-            const name = profile?.display_name ?? "알 수 없음";
+            const name = p.profile?.display_name ?? "알 수 없음";
             return (
               <li
                 key={p.id}

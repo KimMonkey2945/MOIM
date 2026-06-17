@@ -14,10 +14,178 @@ export type Database = {
   }
   public: {
     Tables: {
+      announcements: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          event_id: string
+          id: string
+          is_pinned: boolean
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string
+          event_id: string
+          id?: string
+          is_pinned?: boolean
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          is_pinned?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "announcements_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comments: {
+        Row: {
+          announcement_id: string
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          announcement_id: string
+          author_id: string
+          content: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          announcement_id?: string
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "announcements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_participants: {
+        Row: {
+          event_id: string
+          id: string
+          joined_at: string
+          rsvp_status: Database["public"]["Enums"]["rsvp_status"]
+          user_id: string
+        }
+        Insert: {
+          event_id: string
+          id?: string
+          joined_at?: string
+          rsvp_status: Database["public"]["Enums"]["rsvp_status"]
+          user_id: string
+        }
+        Update: {
+          event_id?: string
+          id?: string
+          joined_at?: string
+          rsvp_status?: Database["public"]["Enums"]["rsvp_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          category: Database["public"]["Enums"]["event_category"]
+          created_at: string
+          description: string | null
+          event_at: string
+          host_id: string
+          id: string
+          location: string
+          status: Database["public"]["Enums"]["event_status"]
+          thumbnail_url: string | null
+          title: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["event_category"]
+          created_at?: string
+          description?: string | null
+          event_at: string
+          host_id: string
+          id?: string
+          location: string
+          status?: Database["public"]["Enums"]["event_status"]
+          thumbnail_url?: string | null
+          title: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["event_category"]
+          created_at?: string
+          description?: string | null
+          event_at?: string
+          host_id?: string
+          id?: string
+          location?: string
+          status?: Database["public"]["Enums"]["event_status"]
+          thumbnail_url?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_host_id_fkey"
+            columns: ["host_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           bio: string | null
+          display_name: string | null
           full_name: string | null
           id: string
           updated_at: string | null
@@ -27,6 +195,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          display_name?: string | null
           full_name?: string | null
           id: string
           updated_at?: string | null
@@ -36,6 +205,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          display_name?: string | null
           full_name?: string | null
           id?: string
           updated_at?: string | null
@@ -44,15 +214,65 @@ export type Database = {
         }
         Relationships: []
       }
+      user_sanctions: {
+        Row: {
+          banned_until: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          lifted_at: string | null
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          banned_until?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lifted_at?: string | null
+          reason: string
+          user_id: string
+        }
+        Update: {
+          banned_until?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lifted_at?: string | null
+          reason?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_sanctions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_sanctions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      set_pinned_announcement: {
+        Args: { p_announcement_id: string; p_event_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
-      [_ in never]: never
+      event_category: "운동" | "친목" | "스터디" | "기타"
+      event_status: "active" | "cancelled"
+      rsvp_status: "going" | "maybe" | "not_going"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -179,6 +399,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      event_category: ["운동", "친목", "스터디", "기타"],
+      event_status: ["active", "cancelled"],
+      rsvp_status: ["going", "maybe", "not_going"],
+    },
   },
 } as const

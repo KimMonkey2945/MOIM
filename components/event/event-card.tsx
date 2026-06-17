@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { CalendarDays, MapPin } from "lucide-react";
 
-import type { MockEvent } from "@/lib/mock/types";
-import { listParticipantsByEvent } from "@/lib/mock/participants";
+import type { FeedEvent } from "@/lib/types";
 import {
   categoryGradients,
   categoryStyles,
@@ -12,15 +11,11 @@ import { cn } from "@/lib/utils";
 import { AvatarStack } from "@/components/event/avatar-stack";
 
 // 홈 피드 이벤트 카드. 썸네일·카테고리 칩·제목·날짜·장소·참석자 아바타·취소 배지.
-// 순수 표시용(훅 없음)이라 서버에서 렌더된다.
-export function EventCard({ event }: { event: MockEvent }) {
-  const goingUserIds = listParticipantsByEvent(event.id)
-    .filter((p) => p.rsvp_status === "going")
-    .map((p) => p.user_id);
-
+// 순수 표시용(훅 없음)이라 서버에서 렌더된다. 참석자 프로필은 서버 조인 결과를 prop으로 받는다.
+export function EventCard({ event }: { event: FeedEvent }) {
   return (
     <Link
-      href={`/protected/events/${event.id}`}
+      href={`/events/${event.id}`}
       className="group flex flex-col overflow-hidden rounded-2xl border transition-colors hover:border-primary/50 hover:bg-muted/30"
     >
       {/* 썸네일 / 카테고리 그라데이션 플레이스홀더 */}
@@ -69,7 +64,7 @@ export function EventCard({ event }: { event: MockEvent }) {
           </span>
         </div>
         <div className="mt-1">
-          <AvatarStack userIds={goingUserIds} maxVisible={3} />
+          <AvatarStack profiles={event.goingProfiles} maxVisible={3} />
         </div>
       </div>
     </Link>

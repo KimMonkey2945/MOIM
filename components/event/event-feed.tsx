@@ -2,14 +2,14 @@
 
 import { useMemo, useState } from "react";
 
-import type { EventCategory, MockEvent } from "@/lib/mock/types";
+import type { EventCategory, FeedEvent } from "@/lib/types";
 import { CategoryChips } from "@/components/event/category-chips";
 import { EventCard } from "@/components/event/event-card";
 import { SearchBar } from "@/components/event/search-bar";
 
 // 홈 피드 클라이언트 컨테이너 — 카테고리 칩 + 제목 검색 상태를 보유하고
-// 서버에서 받은 events 배열을 클라이언트 필터링한다(Phase 3에서도 표시 로직 유지).
-export function EventFeed({ events }: { events: MockEvent[] }) {
+// 서버에서 받은 events 배열을 클라이언트 필터링한다(표시 로직은 mock 시절과 동일).
+export function EventFeed({ events }: { events: FeedEvent[] }) {
   const [category, setCategory] = useState<EventCategory | null>(null);
   const [query, setQuery] = useState("");
 

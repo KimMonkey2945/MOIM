@@ -35,8 +35,8 @@ function GoogleIcon() {
 }
 
 export function SocialAuthButtons({
-  // 로그인 성공 후 최종 이동할 경로 (기본: 보호 페이지)
-  redirectTo = "/protected",
+  // 로그인 성공 후 최종 이동할 경로 (기본: 홈)
+  redirectTo = "/",
 }: {
   redirectTo?: string;
 }) {
@@ -61,7 +61,7 @@ export function SocialAuthButtons({
       if (error) throw error;
       // 성공 시 브라우저가 구글 동의 화면으로 이동하므로 별도 라우팅은 필요 없다
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      setError(error instanceof Error ? error.message : "오류가 발생했습니다");
       setIsLoading(false);
     }
   };

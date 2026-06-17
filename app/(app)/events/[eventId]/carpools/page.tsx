@@ -1,17 +1,22 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-import { getEventById } from "@/lib/mock/events";
+import { createClient } from "@/lib/supabase/server";
 
-// 카풀 탭 (PRD 6.2). 현재는 빈 껍데기.
-// 운전자 카드·탑승 신청 등은 Phase 3 Task에서 구현한다(carpools mock 포함).
+// 카풀 탭 (PRD 6.2). 현재는 빈 껍데기(제목만 실데이터).
+// 운전자 카드·탑승 신청 등은 Phase 4 Task에서 구현한다.
 async function CarpoolList({
   params,
 }: {
   params: Promise<{ eventId: string }>;
 }) {
   const { eventId } = await params;
-  const event = getEventById(eventId);
+  const supabase = await createClient();
+  const { data: event } = await supabase
+    .from("events")
+    .select("title")
+    .eq("id", eventId)
+    .single();
 
   if (!event) {
     notFound();

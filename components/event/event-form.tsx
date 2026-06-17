@@ -1,9 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 
-import type { EventCategory, MockEvent } from "@/lib/mock/types";
+import type { Tables } from "@/lib/database.types";
+import type { EventCategory } from "@/lib/types";
+import {
+  createEvent,
+  updateEvent,
+  cancelEvent,
+} from "@/app/(app)/events/actions";
 import {
   ALL_CATEGORIES,
   fromDateTimeInputs,
@@ -26,17 +32,18 @@ import { cn } from "@/lib/utils";
 const TITLE_MAX = 80;
 
 // 이벤트 생성/수정 공용 폼. mode로 분기하고 initialEvent로 수정 프리필한다.
-// 제출은 no-op(로컬 검증 후 상세로 이동) — 영속화는 Phase 3 Server Action으로 교체한다.
+// 제출은 Server Action(createEvent/updateEvent)으로 영속화하고 상세로 이동한다.
 export function EventForm({
   mode,
   initialEvent,
   className,
 }: {
   mode: "create" | "edit";
-  initialEvent?: MockEvent;
+  initialEvent?: Tables<"events">;
   className?: string;
 }) {
   const router = useRouter();
+  const [, startTransition] = useTransition();
 
   const [title, setTitle] = useState(initialEvent?.title ?? "");
   const [description, setDescription] = useState(
@@ -81,30 +88,42 @@ export function EventForm({
       return;
     }
 
-    setIsLoading(true);
-    try {
-      // 입력값을 PRD 8.2 events 컬럼 형태로 정규화(빈 문자열 → null).
-      const normalized = {
-        title: title.trim(),
-        description: description.trim() || null,
-        category,
-        event_at: fromDateTimeInputs(date, time),
-        location: location.trim(),
-        thumbnail_url: thumbnailUrl.trim() || null,
-      };
+    // 입력값을 PRD 8.2 events 컬럼 형태로 정규화(빈 문자열 → null).
+    const normalized = {
+      title: title.trim(),
+      description: description.trim() || null,
+      category,
+      event_at: fromDateTimeInputs(date, time),
+      location: location.trim(),
+      thumbnail_url: thumbnailUrl.trim() || null,
+    };
 
-      // ── Phase 3 wire-up 지점 ───────────────────────────────────────────
-      // mode === "create": createEvent(normalized) → 반환 id로 이동
-      // mode === "edit":   updateEvent(initialEvent.id, normalized)
-      // 현재는 mock 흐름: 수정은 해당 상세로, 생성은 대표 mock 이벤트로 이동.
-      // ──────────────────────────────────────────────────────────────────
-      void normalized;
-      const targetId = initialEvent?.id ?? "event-1";
-      router.push(`/protected/events/${targetId}`);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "오류가 발생했습니다.");
-      setIsLoading(false);
-    }
+    setIsLoading(true);
+    // 성공 시 Server Action이 상세로 redirect한다. 실패 시 error만 반환된다.
+    startTransition(async () => {
+      const result =
+        mode === "create"
+          ? await createEvent(normalized)
+          : await updateEvent(initialEvent!.id, normalized);
+      if (result?.error) {
+        setError(result.error);
+        setIsLoading(false);
+      }
+    });
+  };
+
+  // 이벤트 취소(주최자 전용). 취소 후 상세로 이동하며 상태 배지가 표기된다.
+  const handleCancelEvent = () => {
+    if (!initialEvent) return;
+    setError(null);
+    setIsLoading(true);
+    startTransition(async () => {
+      const result = await cancelEvent(initialEvent.id);
+      if (result?.error) {
+        setError(result.error);
+        setIsLoading(false);
+      }
+    });
   };
 
   return (
@@ -222,6 +241,17 @@ export function EventForm({
                   취소
                 </Button>
               </div>
+
+              {mode === "edit" && initialEvent?.status === "active" && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={handleCancelEvent}
+                  disabled={isLoading}
+                >
+                  이벤트 취소
+                </Button>
+              )}
             </div>
           </form>
         </CardContent>

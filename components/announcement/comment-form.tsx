@@ -1,20 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
 const COMMENT_MAX = 500;
 
-// 댓글 작성 폼. 빈 댓글은 차단하고, 제출은 상위(CommentThread)가 로컬 상태로 처리한다.
+// 댓글 작성 폼. 빈 댓글은 차단하고, onSubmit은 Server Action을 호출한다(실패 시 에러 반환).
 export function CommentForm({
   onSubmit,
 }: {
-  onSubmit: (content: string) => void;
+  onSubmit: (content: string) => Promise<{ error: string | null }>;
 }) {
   const [content, setContent] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,9 +24,15 @@ export function CommentForm({
       setError("댓글 내용을 입력해 주세요.");
       return;
     }
-    onSubmit(trimmed);
-    setContent("");
     setError(null);
+    startTransition(async () => {
+      const result = await onSubmit(trimmed);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      setContent("");
+    });
   };
 
   return (
@@ -40,7 +47,7 @@ export function CommentForm({
       />
       {error && <p className="text-sm text-destructive">{error}</p>}
       <div className="flex justify-end">
-        <Button type="submit" size="sm">
+        <Button type="submit" size="sm" disabled={isPending}>
           댓글 등록
         </Button>
       </div>

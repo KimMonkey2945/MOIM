@@ -11,63 +11,50 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
-import type { Profile } from "@/lib/mock/types";
+import { useState, useTransition } from "react";
+import type { PublicProfile } from "@/lib/types";
+import { updateProfile } from "@/app/(app)/profile/actions";
 
-// 프로필 수정 폼 (Phase 0: display_name·avatar_url 중심으로 축소).
-// 영속화 없이 로컬 상태/no-op으로 인터랙션만 시뮬레이션한다.
-// 빈 문자열 → null 변환 등 입력 규칙은 UI 레벨에서 미리 반영(Phase 3 wire-up 대비).
+// 프로필 수정 폼 (display_name·avatar_url 중심).
+// 제출은 Server Action(updateProfile)으로 영속화한다. 빈 문자열 → null로 정규화한다.
 export function ProfileForm({
   profile,
   email,
   className,
   ...props
 }: {
-  profile: Profile;
+  profile: PublicProfile;
   email: string;
 } & React.ComponentPropsWithoutRef<"div">) {
   const [displayName, setDisplayName] = useState(profile.display_name ?? "");
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url ?? "");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, startTransition] = useTransition();
 
-  // shrimp-rules 9절 폼 패턴(try/catch/finally, error 상태)을 미리 맞춰
-  // Phase 3 async Supabase 호출 교체 비용을 줄인다.
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError(null);
     setSuccess(false);
 
-    try {
-      // 빈 문자열은 null로 정규화한다(Phase 3에서 DB 저장 시 UNIQUE/NULL 규칙 대비).
-      const normalizedDisplayName = displayName.trim() || null;
-      const normalizedAvatarUrl = avatarUrl.trim() || null;
+    // 빈 문자열은 null로 정규화한다(미설정 의미).
+    const normalizedDisplayName = displayName.trim() || null;
+    const normalizedAvatarUrl = avatarUrl.trim() || null;
 
-      // ── Phase 3 wire-up 지점 ─────────────────────────────────────────────
-      // 아래 로컬 시뮬레이션을 실제 Supabase update로 교체한다:
-      //   const supabase = createClient(); // @/lib/supabase/client
-      //   const { error } = await supabase
-      //     .from("profiles")
-      //     .update({
-      //       display_name: normalizedDisplayName,
-      //       avatar_url: normalizedAvatarUrl,
-      //       updated_at: new Date().toISOString(),
-      //     })
-      //     .eq("id", profile.id);
-      //   if (error) throw error;
-      // ────────────────────────────────────────────────────────────────────
-
-      // 낙관적 UI: 정규화된 값을 로컬 상태에 반영하고 성공 표시
+    startTransition(async () => {
+      const result = await updateProfile({
+        display_name: normalizedDisplayName,
+        avatar_url: normalizedAvatarUrl,
+      });
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      // 저장 성공: 정규화된 값을 입력에 반영하고 성공 표시
       setDisplayName(normalizedDisplayName ?? "");
       setAvatarUrl(normalizedAvatarUrl ?? "");
       setSuccess(true);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "오류가 발생했습니다.");
-    } finally {
-      setIsLoading(false);
-    }
+    });
   };
 
   const previewInitial = (displayName.trim() || "?").charAt(0).toUpperCase();
@@ -136,9 +123,7 @@ export function ProfileForm({
 
               {error && <p className="text-sm text-red-500">{error}</p>}
               {success && (
-                <p className="text-sm text-green-600">
-                  미리보기에 반영되었습니다.
-                </p>
+                <p className="text-sm text-green-600">저장되었습니다.</p>
               )}
 
               <Button type="submit" className="w-full" disabled={isLoading}>

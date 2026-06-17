@@ -10,8 +10,8 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "Next.js and Supabase Starter Kit",
-  description: "The fastest way to build apps with Next.js and Supabase",
+  title: "Moim",
+  description: "함께하는 모임을 더 쉽게 — 이벤트 피드 앱",
 };
 
 // candyland 테마 폰트. Poppins는 라틴 전용이라 한글은 tailwind sans fallback으로 렌더된다.
@@ -42,7 +42,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="ko" suppressHydrationWarning>
       <body
         className={`${poppins.variable} ${pretendard.variable} ${robotoMono.variable} font-sans antialiased`}
       >

@@ -1,4 +1,4 @@
-import type { EventCategory, RsvpStatus } from "@/lib/mock/types";
+import type { EventCategory, RsvpStatus } from "@/lib/types";
 
 // 이벤트/RSVP 화면 표시에 공통으로 쓰는 포맷·색상 매핑.
 // Phase 3 wire-up 후에도 표시 규칙은 그대로 재사용한다(데이터 소스만 교체).

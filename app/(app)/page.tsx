@@ -1,14 +1,32 @@
 import { Suspense } from "react";
 
-import { listEventsByUser } from "@/lib/mock/events";
-import { MOCK_CURRENT_USER_ID } from "@/lib/mock/profiles";
+import { createClient } from "@/lib/supabase/server";
+import type { FeedEvent, PublicProfile } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EventFeed } from "@/components/event/event-feed";
 
 // 홈 피드 (PRD 6.2) — 내가 참여/주최한 이벤트 카드 목록.
-// 동적 mock 조회를 async 컴포넌트로 분리해 Suspense로 감싼다(cacheComponents 패턴).
+// RLS(events SELECT = 참여자+주최자)가 가시 범위를 강제하므로 별도 필터가 필요 없다.
+// 참석자 프로필을 한 번에 조인해 카드 N+1을 방지한다(cacheComponents + Suspense).
 async function HomeFeed() {
-  const events = listEventsByUser(MOCK_CURRENT_USER_ID);
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("events")
+    .select(
+      "*, event_participants(user_id, rsvp_status, profile:profiles(id, display_name, avatar_url))",
+    )
+    .order("event_at", { ascending: true });
+
+  const events: FeedEvent[] = (data ?? []).map(
+    ({ event_participants, ...event }) => ({
+      ...event,
+      goingProfiles: (event_participants ?? [])
+        .filter((p) => p.rsvp_status === "going")
+        .map((p) => p.profile)
+        .filter((p): p is PublicProfile => p !== null),
+    }),
+  );
+
   return <EventFeed events={events} />;
 }
 

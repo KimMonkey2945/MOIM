@@ -12,11 +12,11 @@ export interface NavItem {
 }
 
 export const navItems: NavItem[] = [
-  { href: "/protected", label: "홈", icon: Home },
-  { href: "/protected/events/new", label: "이벤트+", icon: PlusCircle },
-  { href: "/protected/dashboard", label: "대시보드", icon: LayoutDashboard },
+  { href: "/", label: "홈", icon: Home },
+  { href: "/events/new", label: "이벤트+", icon: PlusCircle },
+  { href: "/dashboard", label: "대시보드", icon: LayoutDashboard },
   {
-    href: "/protected/profile",
+    href: "/profile",
     label: "프로필",
     icon: User,
     showInHeader: false,
@@ -25,12 +25,12 @@ export const navItems: NavItem[] = [
 
 /**
  * 현재 경로 기준 내비 항목 활성 판정.
- * - 홈("/protected")은 하위 경로(/protected/events 등)와 겹치므로 정확 매칭만 활성.
+ * - 홈("/")은 모든 하위 경로의 접두사이므로 정확 매칭만 활성.
  * - 그 외 항목은 prefix 매칭(해당 섹션 하위 경로 진입 시에도 활성 유지).
  */
 export function isNavItemActive(itemHref: string, pathname: string): boolean {
-  if (itemHref === "/protected") {
-    return pathname === "/protected";
+  if (itemHref === "/") {
+    return pathname === "/";
   }
   return pathname === itemHref || pathname.startsWith(`${itemHref}/`);
 }

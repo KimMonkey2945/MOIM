@@ -48,12 +48,12 @@ export async function updateSession(request: NextRequest) {
   const user = data?.claims;
 
   if (
-    request.nextUrl.pathname !== "/" &&
     !user &&
     !request.nextUrl.pathname.startsWith("/login") &&
     !request.nextUrl.pathname.startsWith("/auth")
   ) {
-    // no user, potentially respond by redirecting the user to the login page
+    // 미인증 사용자는 /auth/* · /login 외 모든 경로(홈 / 포함)에서 로그인 페이지로.
+    // 홈(/)이 인증된 앱 메인이 되었으므로 기존의 pathname !== "/" 예외를 제거했다.
     const url = request.nextUrl.clone();
     url.pathname = "/auth/login";
     return NextResponse.redirect(url);

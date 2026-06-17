@@ -2,9 +2,8 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { CalendarDays, MapPin, User } from "lucide-react";
 
-import { getEventById } from "@/lib/mock/events";
-import { getDisplayName, MOCK_CURRENT_USER_ID } from "@/lib/mock/profiles";
-import { listParticipantsByEvent } from "@/lib/mock/participants";
+import { createClient } from "@/lib/supabase/server";
+import type { ParticipantWithProfile, PublicProfile } from "@/lib/types";
 import {
   categoryGradients,
   categoryStyles,
@@ -16,27 +15,50 @@ import { AvatarStack } from "@/components/event/avatar-stack";
 import { ParticipantList } from "@/components/event/participant-list";
 import { RsvpControl } from "@/components/event/rsvp-control";
 
-// 동적 mock 조회는 별도 async 컴포넌트로 분리해 Suspense로 감싼다
-// (cacheComponents 환경 패턴). 존재하지 않는 eventId는 notFound()로 404 처리.
+// 동적 조회는 별도 async 컴포넌트로 분리해 Suspense로 감싼다(cacheComponents 환경 패턴).
+// 비참여자는 RLS로 행이 보이지 않아 single()이 실패 → notFound()(404)로 처리된다.
 async function EventDetail({
   params,
 }: {
   params: Promise<{ eventId: string }>;
 }) {
   const { eventId } = await params;
-  const event = getEventById(eventId);
+  const supabase = await createClient();
+
+  const { data: claims } = await supabase.auth.getClaims();
+  const currentUserId = claims?.claims?.sub as string | undefined;
+
+  const { data: event } = await supabase
+    .from("events")
+    .select(
+      "*, host:profiles!events_host_id_fkey(display_name), event_participants(id, user_id, rsvp_status, profile:profiles(id, display_name, avatar_url))",
+    )
+    .eq("id", eventId)
+    .single();
 
   if (!event) {
     notFound();
   }
 
-  const participants = listParticipantsByEvent(event.id);
-  const goingUserIds = participants
+  const participants: ParticipantWithProfile[] = (
+    event.event_participants ?? []
+  ).map((p) => ({
+    id: p.id,
+    user_id: p.user_id,
+    rsvp_status: p.rsvp_status,
+    profile: p.profile,
+  }));
+
+  const goingProfiles = participants
     .filter((p) => p.rsvp_status === "going")
-    .map((p) => p.user_id);
+    .map((p) => p.profile)
+    .filter((p): p is PublicProfile => p !== null);
+
   const myRsvp = participants.find(
-    (p) => p.user_id === MOCK_CURRENT_USER_ID,
+    (p) => p.user_id === currentUserId,
   )?.rsvp_status;
+
+  const hostName = event.host?.display_name ?? "알 수 없음";
 
   return (
     <div className="flex w-full flex-1 flex-col gap-6">
@@ -90,14 +112,16 @@ async function EventDetail({
           </div>
           <div className="flex items-center gap-2">
             <User className="h-4 w-4" />
-            주최: {getDisplayName(event.host_id)}
+            주최: {hostName}
           </div>
         </dl>
-        <AvatarStack userIds={goingUserIds} size="lg" />
+        <AvatarStack profiles={goingProfiles} size="lg" />
       </div>
 
       {/* RSVP 컨트롤 (취소된 이벤트는 비노출) */}
-      {event.status === "active" && <RsvpControl initialStatus={myRsvp} />}
+      {event.status === "active" && (
+        <RsvpControl eventId={event.id} initialStatus={myRsvp} />
+      )}
 
       {/* 탭 내비 (공지/카풀/정산/수정) */}
       <EventTabNav eventId={event.id} />

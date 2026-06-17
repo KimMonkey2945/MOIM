@@ -4,70 +4,36 @@ import { useState } from "react";
 import Link from "next/link";
 import { Pencil, Pin, PinOff, Trash2 } from "lucide-react";
 
-import type { Announcement } from "@/lib/mock/types";
-import { getDisplayName } from "@/lib/mock/profiles";
+import type { AnnouncementWithAuthor } from "@/lib/types";
+import {
+  createAnnouncement,
+  updateAnnouncement,
+  deleteAnnouncement,
+  togglePin,
+} from "@/app/(app)/events/[eventId]/announcements/actions";
 import { formatEventDate } from "@/lib/event-display";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AnnouncementForm } from "@/components/announcement/announcement-form";
 
 // 공지 피드 — 핀 고정 우선 + 최신순. 주최자에게만 작성/수정/삭제/핀 UI를 노출한다.
-// 로컬 상태로만 시뮬레이션(새로고침 시 초기화). 영속화는 Phase 3 wire-up에서 연결한다.
+// 쓰기는 Server Action으로 영속화하고 revalidatePath로 서버가 목록을 다시 내려준다.
 export function AnnouncementFeed({
   eventId,
-  initialAnnouncements,
+  announcements,
   isHost,
 }: {
   eventId: string;
-  initialAnnouncements: Announcement[];
+  announcements: AnnouncementWithAuthor[];
   isHost: boolean;
 }) {
-  const [announcements, setAnnouncements] = useState(initialAnnouncements);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // 핀 우선(true 먼저) → 최신순(created_at desc) 정렬. 헬퍼와 동일 규칙을 로컬에 적용.
+  // 서버가 핀 우선·최신순으로 정렬해 내려주지만, 방어적으로 한 번 더 정렬한다.
   const sorted = [...announcements].sort((a, b) => {
     if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1;
     return b.created_at.localeCompare(a.created_at);
   });
-
-  const handleCreate = (content: string) => {
-    const now = new Date().toISOString();
-    setAnnouncements((prev) => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        event_id: eventId,
-        author_id: "user-1", // mock 현재 사용자(주최자). Phase 3에서 getClaims().sub로 교체.
-        content,
-        is_pinned: false,
-        created_at: now,
-      },
-    ]);
-  };
-
-  const handleEdit = (id: string, content: string) => {
-    setAnnouncements((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, content } : a)),
-    );
-    setEditingId(null);
-  };
-
-  const handleDelete = (id: string) => {
-    setAnnouncements((prev) => prev.filter((a) => a.id !== id));
-  };
-
-  // 핀 단일 보장: 대상만 토글하고, 새로 핀하면 나머지는 모두 해제한다.
-  const handleTogglePin = (id: string) => {
-    setAnnouncements((prev) => {
-      const target = prev.find((a) => a.id === id);
-      const willPin = !target?.is_pinned;
-      return prev.map((a) => {
-        if (a.id === id) return { ...a, is_pinned: willPin };
-        return willPin ? { ...a, is_pinned: false } : a;
-      });
-    });
-  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -75,7 +41,10 @@ export function AnnouncementFeed({
       {isHost && (
         <div className="rounded-2xl border p-5">
           <h2 className="mb-3 text-base font-semibold">공지 작성</h2>
-          <AnnouncementForm mode="create" onSubmit={handleCreate} />
+          <AnnouncementForm
+            mode="create"
+            onSubmit={(content) => createAnnouncement(eventId, content)}
+          />
         </div>
       )}
 
@@ -89,6 +58,8 @@ export function AnnouncementFeed({
         <ul className="flex flex-col gap-3">
           {sorted.map((announcement) => {
             const isEditing = editingId === announcement.id;
+            const authorName =
+              announcement.author?.display_name ?? "알 수 없음";
             return (
               <li
                 key={announcement.id}
@@ -101,14 +72,22 @@ export function AnnouncementFeed({
                   <AnnouncementForm
                     mode="edit"
                     initialContent={announcement.content}
-                    onSubmit={(content) => handleEdit(announcement.id, content)}
+                    onSubmit={async (content) => {
+                      const result = await updateAnnouncement(
+                        eventId,
+                        announcement.id,
+                        content,
+                      );
+                      if (!result.error) setEditingId(null);
+                      return result;
+                    }}
                     onCancel={() => setEditingId(null)}
                   />
                 ) : (
                   <div className="flex flex-col gap-2">
                     <div className="flex items-start justify-between gap-3">
                       <Link
-                        href={`/protected/events/${eventId}/announcements/${announcement.id}`}
+                        href={`/events/${eventId}/announcements/${announcement.id}`}
                         className="flex items-start gap-1.5 text-base font-medium hover:underline"
                       >
                         {announcement.is_pinned && (
@@ -123,8 +102,7 @@ export function AnnouncementFeed({
                       </Link>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {getDisplayName(announcement.author_id)} ·{" "}
-                      {formatEventDate(announcement.created_at)}
+                      {authorName} · {formatEventDate(announcement.created_at)}
                     </p>
 
                     {/* 주최자 전용 액션 */}
@@ -134,7 +112,13 @@ export function AnnouncementFeed({
                           type="button"
                           size="sm"
                           variant="ghost"
-                          onClick={() => handleTogglePin(announcement.id)}
+                          onClick={() =>
+                            togglePin(
+                              eventId,
+                              announcement.id,
+                              !announcement.is_pinned,
+                            )
+                          }
                         >
                           {announcement.is_pinned ? (
                             <>
@@ -161,7 +145,9 @@ export function AnnouncementFeed({
                           size="sm"
                           variant="ghost"
                           className="text-destructive hover:text-destructive"
-                          onClick={() => handleDelete(announcement.id)}
+                          onClick={() =>
+                            deleteAnnouncement(eventId, announcement.id)
+                          }
                         >
                           <Trash2 className="mr-1 h-3.5 w-3.5" />
                           삭제

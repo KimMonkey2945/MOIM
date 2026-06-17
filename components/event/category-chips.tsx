@@ -1,6 +1,6 @@
 "use client";
 
-import type { EventCategory } from "@/lib/mock/types";
+import type { EventCategory } from "@/lib/types";
 import { ALL_CATEGORIES } from "@/lib/event-display";
 import { cn } from "@/lib/utils";
 

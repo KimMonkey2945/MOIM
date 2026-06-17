@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Check, HelpCircle, X } from "lucide-react";
 
-import type { RsvpStatus } from "@/lib/mock/types";
+import type { RsvpStatus } from "@/lib/types";
+import { upsertRsvp } from "@/app/(app)/events/actions";
 import { cn } from "@/lib/utils";
 
 // 참석 ✓ / 미정 ? / 불참 ✗ 3-segment 컨트롤.
-// 클릭 시 로컬 상태로 즉시 반영(낙관적 UI). 영속화는 Phase 3에서 Server Action으로 연결한다.
+// 클릭 시 로컬 상태로 즉시 반영(낙관적 UI)하고 Server Action(upsertRsvp)으로 영속화한다.
+// 실패하면 이전 상태로 롤백한다.
 const SEGMENTS: {
   value: RsvpStatus;
   label: string;
@@ -35,18 +37,32 @@ const SEGMENTS: {
 ];
 
 export function RsvpControl({
+  eventId,
   initialStatus,
   className,
 }: {
+  /** RSVP를 영속화할 대상 이벤트 */
+  eventId: string;
   /** 현재 사용자의 기존 RSVP(없으면 미응답) */
   initialStatus?: RsvpStatus;
   className?: string;
 }) {
   const [status, setStatus] = useState<RsvpStatus | undefined>(initialStatus);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const handleSelect = (next: RsvpStatus) => {
-    // 동일 상태 재클릭은 멱등(같은 값 유지). Phase 3에서는 여기서 upsert를 호출한다.
+    // 동일 상태 재클릭은 멱등. 낙관적으로 먼저 반영하고 실패 시 롤백한다.
+    const prev = status;
     setStatus(next);
+    setError(null);
+    startTransition(async () => {
+      const result = await upsertRsvp(eventId, next);
+      if (result?.error) {
+        setStatus(prev);
+        setError(result.error);
+      }
+    });
   };
 
   return (
@@ -65,9 +81,10 @@ export function RsvpControl({
               key={segment.value}
               type="button"
               aria-pressed={active}
+              disabled={isPending}
               onClick={() => handleSelect(segment.value)}
               className={cn(
-                "flex flex-1 items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors",
+                "flex flex-1 items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-60",
                 active
                   ? segment.activeClass
                   : "bg-transparent text-muted-foreground hover:bg-muted",
@@ -79,10 +96,14 @@ export function RsvpControl({
           );
         })}
       </div>
-      {!status && (
-        <p className="text-xs text-muted-foreground">
-          아직 응답하지 않았습니다. 참석 여부를 선택해 주세요.
-        </p>
+      {error ? (
+        <p className="text-xs text-destructive">{error}</p>
+      ) : (
+        !status && (
+          <p className="text-xs text-muted-foreground">
+            아직 응답하지 않았습니다. 참석 여부를 선택해 주세요.
+          </p>
+        )
       )}
     </div>
   );

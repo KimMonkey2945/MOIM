@@ -11,10 +11,10 @@ export function EventTabNav({ eventId }: { eventId: string }) {
   const pathname = usePathname();
 
   const tabs = [
-    { href: `/protected/events/${eventId}/announcements`, label: "공지" },
-    { href: `/protected/events/${eventId}/carpools`, label: "카풀" },
-    { href: `/protected/events/${eventId}/expenses`, label: "정산" },
-    { href: `/protected/events/${eventId}/edit`, label: "수정" },
+    { href: `/events/${eventId}/announcements`, label: "공지" },
+    { href: `/events/${eventId}/carpools`, label: "카풀" },
+    { href: `/events/${eventId}/expenses`, label: "정산" },
+    { href: `/events/${eventId}/edit`, label: "수정" },
   ];
 
   return (

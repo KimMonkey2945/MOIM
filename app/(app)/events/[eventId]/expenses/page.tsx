@@ -1,17 +1,22 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-import { getEventById } from "@/lib/mock/events";
+import { createClient } from "@/lib/supabase/server";
 
-// 정산 탭 (PRD 6.2). 현재는 빈 껍데기.
-// 비용 항목·분배·송금 체크 등은 Phase 4 Task에서 구현한다(expenses mock 포함).
+// 정산 탭 (PRD 6.2). 현재는 빈 껍데기(제목만 실데이터).
+// 비용 항목·분배·송금 체크 등은 Phase 5 Task에서 구현한다.
 async function ExpenseList({
   params,
 }: {
   params: Promise<{ eventId: string }>;
 }) {
   const { eventId } = await params;
-  const event = getEventById(eventId);
+  const supabase = await createClient();
+  const { data: event } = await supabase
+    .from("events")
+    .select("title")
+    .eq("id", eventId)
+    .single();
 
   if (!event) {
     notFound();
