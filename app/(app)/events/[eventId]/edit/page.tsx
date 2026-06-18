@@ -28,7 +28,7 @@ async function EventEdit({ params }: { params: Promise<{ eventId: string }> }) {
     redirect(`/events/${eventId}`);
   }
 
-  return <EventForm mode="edit" initialEvent={event} />;
+  return <EventForm mode="edit" initialEvent={event} userId={currentUserId!} />;
 }
 
 export default function EventEditPage({

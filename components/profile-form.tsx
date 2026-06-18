@@ -14,17 +14,22 @@ import { Label } from "@/components/ui/label";
 import { useState, useTransition } from "react";
 import type { PublicProfile } from "@/lib/types";
 import { updateProfile } from "@/app/(app)/profile/actions";
+import { ImageUpload } from "@/components/image-upload";
+
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024; // 2MB (avatars 버킷 정책과 일치)
 
 // 프로필 수정 폼 (display_name·avatar_url 중심).
 // 제출은 Server Action(updateProfile)으로 영속화한다. 빈 문자열 → null로 정규화한다.
 export function ProfileForm({
   profile,
   email,
+  userId,
   className,
   ...props
 }: {
   profile: PublicProfile;
   email: string;
+  userId: string;
 } & React.ComponentPropsWithoutRef<"div">) {
   const [displayName, setDisplayName] = useState(profile.display_name ?? "");
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url ?? "");
@@ -57,8 +62,6 @@ export function ProfileForm({
     });
   };
 
-  const previewInitial = (displayName.trim() || "?").charAt(0).toUpperCase();
-
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -69,25 +72,15 @@ export function ProfileForm({
         <CardContent>
           <form onSubmit={handleSubmit}>
             <div className="flex flex-col gap-6">
-              {/* 아바타 미리보기 */}
-              <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border bg-muted text-xl font-semibold text-muted-foreground">
-                  {avatarUrl.trim() ? (
-                    // 외부 임의 URL 미리보기라 next/image 도메인 설정을 피해 img 사용
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={avatarUrl}
-                      alt="아바타 미리보기"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    previewInitial
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  아바타 URL을 입력하면 미리보기가 갱신됩니다.
-                </p>
-              </div>
+              {/* 아바타 업로드 + 미리보기 */}
+              <ImageUpload
+                shape="circle"
+                bucket="avatars"
+                userId={userId}
+                maxBytes={AVATAR_MAX_BYTES}
+                value={avatarUrl}
+                onChange={setAvatarUrl}
+              />
 
               <div className="grid gap-2">
                 <Label htmlFor="email">이메일</Label>
@@ -111,7 +104,7 @@ export function ProfileForm({
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="avatar_url">아바타 URL</Label>
+                <Label htmlFor="avatar_url">아바타 URL (직접 입력)</Label>
                 <Input
                   id="avatar_url"
                   type="url"
@@ -119,6 +112,10 @@ export function ProfileForm({
                   value={avatarUrl}
                   onChange={(e) => setAvatarUrl(e.target.value)}
                 />
+                <p className="text-sm text-muted-foreground">
+                  위에서 이미지를 업로드하거나 외부 이미지 URL을 직접 입력할 수
+                  있습니다.
+                </p>
               </div>
 
               {error && <p className="text-sm text-red-500">{error}</p>}

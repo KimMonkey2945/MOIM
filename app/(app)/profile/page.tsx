@@ -31,7 +31,7 @@ async function ProfileDetails() {
     avatar_url: null,
   };
 
-  return <ProfileForm profile={profile} email={email} />;
+  return <ProfileForm profile={profile} email={email} userId={userId} />;
 }
 
 export default function ProfilePage() {

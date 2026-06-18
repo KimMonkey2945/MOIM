@@ -27,19 +27,23 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ImageUpload } from "@/components/image-upload";
 import { cn } from "@/lib/utils";
 
 const TITLE_MAX = 80;
+const COVER_MAX_BYTES = 5 * 1024 * 1024; // 5MB (event-covers 버킷 정책과 일치)
 
 // 이벤트 생성/수정 공용 폼. mode로 분기하고 initialEvent로 수정 프리필한다.
 // 제출은 Server Action(createEvent/updateEvent)으로 영속화하고 상세로 이동한다.
 export function EventForm({
   mode,
   initialEvent,
+  userId,
   className,
 }: {
   mode: "create" | "edit";
   initialEvent?: Tables<"events">;
+  userId: string;
   className?: string;
 }) {
   const router = useRouter();
@@ -212,7 +216,18 @@ export function EventForm({
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="thumbnail">썸네일 URL</Label>
+                <Label>커버 이미지</Label>
+                <ImageUpload
+                  shape="rect"
+                  bucket="event-covers"
+                  userId={userId}
+                  maxBytes={COVER_MAX_BYTES}
+                  value={thumbnailUrl}
+                  onChange={setThumbnailUrl}
+                />
+                <Label htmlFor="thumbnail" className="mt-2">
+                  커버 URL (직접 입력)
+                </Label>
                 <Input
                   id="thumbnail"
                   type="url"
@@ -220,6 +235,10 @@ export function EventForm({
                   placeholder="https://example.com/cover.png (선택)"
                   onChange={(e) => setThumbnailUrl(e.target.value)}
                 />
+                <p className="text-xs text-muted-foreground">
+                  이미지를 업로드하거나 외부 이미지 URL을 직접 입력할 수
+                  있습니다 (선택).
+                </p>
               </div>
 
               {error && <p className="text-sm text-destructive">{error}</p>}
